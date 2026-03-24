@@ -149,6 +149,22 @@ Detailed evaluation:
 
 ---
 
+## 🚀 Run with Streamlit (Alternative UI)
+
+If you prefer a pure Python interface, you can run the system using Streamlit:
+
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Run the Streamlit app:
+   ```bash
+   streamlit run streamlit_app.py
+   ```
+3. The UI will be available at `http://localhost:8501`.
+
+---
+
 ## 🛠️ Local Setup & Running
 
 ### 1. Prerequisites
