@@ -15,34 +15,27 @@ class RAGEngine:
         self.data_dir = data_dir
 
     def initialize(self):
-        """Process all documents in the data directory and ingest them into the vector store."""
-        if os.path.exists(self.data_dir) and os.path.isdir(self.data_dir):
+        """Initializes the RAG engine by processing all PDFs in the data directory."""
+        print(f">>> RAG ENGINE: Initializing from directory '{self.data_dir}'...")
+        if os.path.exists(self.data_dir):
             chunks = self.doc_processor.process_directory(self.data_dir)
             if chunks:
+                print(f">>> RAG ENGINE: Found {len(chunks)} chunks across documents. Adding to vector store...")
                 self.vector_store.add_documents(chunks)
+                print(">>> RAG ENGINE: Vector store updated.")
+            else:
+                print(">>> RAG ENGINE: No documents found in data directory.")
+        else:
+            print(f">>> RAG ENGINE ERROR: Data directory '{self.data_dir}' does not exist.")
 
-    async def answer_question(self, question: str) -> Dict:
-        """
-        Retrieve relevant context from the vector store and generate an answer
-        strictly based only on that context (closed‑book RAG).
-        """
-        # Step 1: Retrieve top‑k relevant chunks
+    async def answer_question(self, question: str) -> dict:
+        """Retrieves context and generates an answer."""
+        print(f">>> RAG ENGINE: Searching for context for question: '{question}'")
         relevant_chunks = self.vector_store.search(question)
-        if not relevant_chunks:
-            return {
-                "response": "I cannot answer this question because the required information is not in the provided documents.",
-                "chunks": [],
-            }
-
-        # Step 2: Build concise context (optional: limit tokens if needed)
-        context_parts = []
-        for chunk in relevant_chunks:
-            content = chunk["content"].strip()
-            if content:
-                context_parts.append(content)
-        context = "\n\n".join(context_parts)
-
-        # Step 3: Generate answer using LLM, constrained to the context
+        print(f">>> RAG ENGINE: Found {len(relevant_chunks)} relevant chunks.")
+        
+        context = "\n\n".join([chunk["content"] for chunk in relevant_chunks]) if relevant_chunks else "No relevant context found."
+        
         prompt = f"""
 You are an assistant that answers questions using only the provided context.
 If the answer is not in the context, respond with:
@@ -58,28 +51,35 @@ Answer:
 """.strip()
 
         try:
-            # Try cloud LLM first
+            print(">>> RAG ENGINE: Requesting answer from Cloud LLM...")
             response = await self.llm_client.generate_response(
                 prompt=prompt,
                 context=context,
             )
+            return {
+                "response": response,
+                "chunks": relevant_chunks
+            }
         except Exception as e:
-            print(f"Cloud LLM failed: {e}.")
+            print(f">>> RAG ENGINE: Cloud LLM failed: {e}.")
             
             # Disable local fallback on Render to avoid OOM
             if os.getenv("ENVIRONMENT") == "production":
+                print(">>> RAG ENGINE: Production mode detected. Skipping local fallback to save memory.")
                 return {
                     "response": "The cloud LLM service is currently unavailable. Local fallback is disabled in production to save memory.",
                     "chunks": relevant_chunks,
                 }
             
-            print("Falling back to local model...")
+            print(">>> RAG ENGINE: Falling back to local model...")
             if self.local_llm_client is None:
+                print(">>> RAG ENGINE: Loading local model for the first time...")
                 from local_llm_client import LocalLLMClient
                 self.local_llm_client = LocalLLMClient()
+            
             response = await self.local_llm_client.generate_response(prompt=prompt, context=context)
-
-        return {
-            "response": response,
-            "chunks": relevant_chunks,
-        }
+            
+            return {
+                "response": response,
+                "chunks": relevant_chunks
+            }

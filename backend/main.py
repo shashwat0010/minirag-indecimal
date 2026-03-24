@@ -38,25 +38,40 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
+    print(">>> SERVER STARTUP: Initializing application...")
     # Ensure data directory exists
     if not os.path.exists("data"):
+        print(">>> DATA DIR: 'data' folder not found, creating it...")
         os.makedirs("data")
     
     # Initialize in a separate thread to avoid blocking uvicorn startup
     # This allows Render health check to pass immediately
     import threading
-    threading.Thread(target=lambda: get_rag_engine().initialize(), daemon=True).start()
-    print("Initialization started in background.")
+    def background_init():
+        print(">>> BACKGROUND INIT: Starting RAG engine initialization...")
+        try:
+            engine = get_rag_engine()
+            engine.initialize()
+            print(">>> BACKGROUND INIT: RAG engine initialized successfully.")
+        except Exception as e:
+            print(f">>> BACKGROUND INIT ERROR: {e}")
+
+    threading.Thread(target=background_init, daemon=True).start()
+    print(">>> SERVER STARTUP: Uvicorn should bind to port now. Initialization continues in background.")
 
 class Query(BaseModel):
     question: str
 
 @app.post("/ask")
 async def ask_question(query: Query):
+    print(f">>> API REQUEST: Received question: '{query.question}'")
     try:
-        result = await get_rag_engine().answer_question(query.question)
+        engine = get_rag_engine()
+        result = await engine.answer_question(query.question)
+        print(">>> API RESPONSE: Successfully generated answer.")
         return result
     except Exception as e:
+        print(f">>> API ERROR: Failed to answer question: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
