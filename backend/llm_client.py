@@ -4,7 +4,13 @@ from typing import List, Dict
 
 class LLMClient:
     def __init__(self, api_key: str = None, model: str = None):
-        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        # Try to get API key from streamlit secrets first, then environment variable
+        try:
+            import streamlit as st
+            self.api_key = api_key or st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+        except Exception:
+            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+            
         self.model = model or os.getenv("MODEL_NAME", "openai/gpt-3.5-turbo")
         self.url = "https://openrouter.ai/api/v1/chat/completions"
 
