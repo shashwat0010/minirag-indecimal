@@ -3,9 +3,9 @@ import httpx
 from typing import List, Dict
 
 class LLMClient:
-    def __init__(self, api_key: str = None, model: str = "openai/gpt-3.5-turbo"):
+    def __init__(self, api_key: str = None, model: str = None):
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
-        self.model = model
+        self.model = model or os.getenv("MODEL_NAME", "openai/gpt-3.5-turbo")
         self.url = "https://openrouter.ai/api/v1/chat/completions"
 
     async def generate_response(self, prompt: str, context: str) -> str:
