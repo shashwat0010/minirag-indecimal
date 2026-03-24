@@ -6,6 +6,9 @@ from vector_store import VectorStore
 from llm_client import LLMClient
 
 
+from config import get_config
+
+
 class RAGEngine:
     def __init__(self, data_dir: str = None):
         if data_dir is None:
@@ -64,7 +67,7 @@ class RAGEngine:
             print(f">>> RAG ENGINE: Cloud LLM failed: {e}.")
             
             # Disable local fallback on Render to avoid OOM
-            if os.getenv("ENVIRONMENT") == "production":
+            if get_config("ENVIRONMENT") == "production":
                 print(">>> RAG ENGINE: Production mode detected. Skipping local fallback to save memory.")
                 return {
                     "response": "The cloud LLM service is currently unavailable. Local fallback is disabled in production to save memory.",

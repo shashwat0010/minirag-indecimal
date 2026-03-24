@@ -2,16 +2,13 @@ import os
 import httpx
 from typing import List, Dict
 
+from config import get_config
+
 class LLMClient:
     def __init__(self, api_key: str = None, model: str = None):
-        # Try to get API key from streamlit secrets first, then environment variable
-        try:
-            import streamlit as st
-            self.api_key = api_key or st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-        except Exception:
-            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
-            
-        self.model = model or os.getenv("MODEL_NAME", "openai/gpt-3.5-turbo")
+        # Centralized config: st.secrets -> os.getenv
+        self.api_key = api_key or get_config("OPENROUTER_API_KEY")
+        self.model = model or get_config("MODEL_NAME", "mistralai/mistral-7b-instruct:free")
         self.url = "https://openrouter.ai/api/v1/chat/completions"
 
     async def generate_response(self, prompt: str, context: str) -> str:

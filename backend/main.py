@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+from config import get_config
+
 # Force transformers to use PyTorch
 os.environ["USE_TORCH"] = "1"
 os.environ["USE_TF"] = "0"
@@ -24,13 +26,13 @@ def get_rag_engine():
 
 # CORS configuration
 allowed_origins = [
-    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    get_config("FRONTEND_URL", "http://localhost:5173"),
     "https://*.vercel.app",  # Allow Vercel preview deployments
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if os.getenv("ENVIRONMENT") == "production" else ["*"],
+    allow_origins=allowed_origins if get_config("ENVIRONMENT") == "production" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
