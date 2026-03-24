@@ -5,9 +5,18 @@ from typing import List, Dict
 
 class VectorStore:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        self.model = SentenceTransformer(model_name)
+        self.model_name = model_name
+        self._model = None
         self.index = None
         self.metadata = []
+
+    @property
+    def model(self):
+        if self._model is None:
+            print(f"Loading embedding model: {self.model_name}...")
+            self._model = SentenceTransformer(self.model_name)
+            print("Embedding model loaded.")
+        return self._model
 
     def add_documents(self, chunks: List[Dict]):
         """Adds documents to the FAISS index."""

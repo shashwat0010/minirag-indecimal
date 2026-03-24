@@ -33,10 +33,15 @@ rag_engine = RAGEngine()
 
 @app.on_event("startup")
 async def startup_event():
-    # Ensure data directory exists and process PDFs
+    # Ensure data directory exists
     if not os.path.exists("data"):
         os.makedirs("data")
-    rag_engine.initialize()
+    
+    # Initialize in a separate thread to avoid blocking uvicorn startup
+    # This allows Render health check to pass immediately
+    import threading
+    threading.Thread(target=rag_engine.initialize, daemon=True).start()
+    print("Initialization started in background.")
 
 class Query(BaseModel):
     question: str

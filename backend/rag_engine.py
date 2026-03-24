@@ -62,10 +62,19 @@ Answer:
             # Try cloud LLM first
             response = await self.llm_client.generate_response(
                 prompt=prompt,
-                context=context,  # if your LLMClient uses this explicitly
+                context=context,
             )
         except Exception as e:
-            print(f"Cloud LLM failed: {e}. Falling back to local model...")
+            print(f"Cloud LLM failed: {e}.")
+            
+            # Disable local fallback on Render to avoid OOM
+            if os.getenv("ENVIRONMENT") == "production":
+                return {
+                    "response": "The cloud LLM service is currently unavailable. Local fallback is disabled in production to save memory.",
+                    "chunks": relevant_chunks,
+                }
+            
+            print("Falling back to local model...")
             if self.local_llm_client is None:
                 self.local_llm_client = LocalLLMClient()
             response = await self.local_llm_client.generate_response(prompt=prompt, context=context)
