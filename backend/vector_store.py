@@ -1,22 +1,29 @@
-import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from typing import List, Dict
 
 class VectorStore:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model_name = model_name
         self._model = None
+        self._faiss = None
         self.index = None
         self.metadata = []
 
     @property
     def model(self):
         if self._model is None:
+            from sentence_transformers import SentenceTransformer
             print(f"Loading embedding model: {self.model_name}...")
             self._model = SentenceTransformer(self.model_name)
             print("Embedding model loaded.")
         return self._model
+
+    @property
+    def faiss(self):
+        if self._faiss is None:
+            import faiss
+            self._faiss = faiss
+        return self._faiss
 
     def add_documents(self, chunks: List[Dict]):
         """Adds documents to the FAISS index."""
@@ -25,7 +32,7 @@ class VectorStore:
         
         dimension = embeddings.shape[1]
         if self.index is None:
-            self.index = faiss.IndexFlatL2(dimension)
+            self.index = self.faiss.IndexFlatL2(dimension)
             
         self.index.add(np.array(embeddings).astype('float32'))
         self.metadata.extend(chunks)

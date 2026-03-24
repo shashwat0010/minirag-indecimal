@@ -1,10 +1,10 @@
 import os
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from typing import List, Dict
 
 class LocalLLMClient:
     def __init__(self, model_id: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"):
+        import torch
+        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
         self.model_id = model_id
         print(f"Loading local model: {model_id}...")
         

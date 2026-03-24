@@ -4,7 +4,6 @@ from typing import Dict, List
 from document_processor import DocumentProcessor
 from vector_store import VectorStore
 from llm_client import LLMClient
-from local_llm_client import LocalLLMClient
 
 
 class RAGEngine:
@@ -76,6 +75,7 @@ Answer:
             
             print("Falling back to local model...")
             if self.local_llm_client is None:
+                from local_llm_client import LocalLLMClient
                 self.local_llm_client = LocalLLMClient()
             response = await self.local_llm_client.generate_response(prompt=prompt, context=context)
 

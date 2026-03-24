@@ -11,9 +11,16 @@ load_dotenv()
 os.environ["USE_TORCH"] = "1"
 os.environ["USE_TF"] = "0"
 
-from rag_engine import RAGEngine
-
 app = FastAPI()
+
+_rag_engine = None
+
+def get_rag_engine():
+    global _rag_engine
+    if _rag_engine is None:
+        from rag_engine import RAGEngine
+        _rag_engine = RAGEngine()
+    return _rag_engine
 
 # CORS configuration
 allowed_origins = [
@@ -29,8 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-rag_engine = RAGEngine()
-
 @app.on_event("startup")
 async def startup_event():
     # Ensure data directory exists
@@ -40,7 +45,7 @@ async def startup_event():
     # Initialize in a separate thread to avoid blocking uvicorn startup
     # This allows Render health check to pass immediately
     import threading
-    threading.Thread(target=rag_engine.initialize, daemon=True).start()
+    threading.Thread(target=lambda: get_rag_engine().initialize(), daemon=True).start()
     print("Initialization started in background.")
 
 class Query(BaseModel):
@@ -49,7 +54,7 @@ class Query(BaseModel):
 @app.post("/ask")
 async def ask_question(query: Query):
     try:
-        result = await rag_engine.answer_question(query.question)
+        result = await get_rag_engine().answer_question(query.question)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
