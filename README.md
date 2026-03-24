@@ -151,17 +151,13 @@ Detailed evaluation:
 
 ## 🚀 Run with Streamlit (Alternative UI)
 
-If you prefer a pure Python interface, you can run the system using Streamlit:
+If you prefer a pure Python interface, you can run the system using Streamlit from the root directory:
 
-1. Navigate to the backend directory:
+1. Run the Streamlit app:
    ```bash
-   cd backend
+   streamlit run app.py
    ```
-2. Run the Streamlit app:
-   ```bash
-   streamlit run streamlit_app.py
-   ```
-3. The UI will be available at `http://localhost:8501`.
+2. The UI will be available at `http://localhost:8501`.
 
 ---
 
@@ -172,9 +168,9 @@ If you prefer a pure Python interface, you can run the system using Streamlit:
 * Node.js & npm
 
 ### 2. Backend Setup
-1. Navigate to the backend directory:
+1. Navigate to the root directory:
    ```bash
-   cd backend
+   cd minirag-indecimal
    ```
 2. Create and activate a virtual environment:
    ```bash
@@ -188,14 +184,15 @@ If you prefer a pure Python interface, you can run the system using Streamlit:
    ```bash
    pip install -r requirements.txt
    ```
-4. Create a `.env` file and add your OpenRouter API key:
+4. Create a `.env` file in the `backend` folder and add your OpenRouter API key:
    ```env
    OPENROUTER_API_KEY=your_api_key_here
-   PORT=8000
+   MODEL_NAME=openai/gpt-3.5-turbo
    ```
 5. Place your PDF/Markdown documents in the `backend/data` folder.
-6. Run the server:
+6. Run the server from the `backend` directory:
    ```bash
+   cd backend
    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
    ```
 
