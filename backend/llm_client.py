@@ -21,30 +21,43 @@ class LLMClient:
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/shashwat0010/minirag-indecimal", # Optional, for OpenRouter analytics
+            "X-Title": "Mini RAG Assistant" # Optional
         }
         
         system_prompt = (
-            "You are a RAG assistant. "
-            "Answer the question ONLY using the provided context. "
-            "Do NOT use any external knowledge. "
-            "Do NOT make assumptions or add extra information. "
-            "Structure your answer using clear bullet points where appropriate for readability. "
-            "If the answer is not explicitly present in the context, say: "
-            "\"Not specified in the provided documents.\""
+            "You are a helpful and precise RAG assistant. "
+            "Answer the user's question ONLY using the provided context. "
+            "If the answer is not in the context, say: 'Not specified in the provided documents.' "
+            "Structure your answer clearly with bullet points if it helps readability."
         )
         
-        full_prompt = f"Context: {context}\n\nQuestion: {prompt}"
+        # Cleaned up: Use only the user question here, since context is in system or explicitly separated
+        user_content = f"Context: {context}\n\nQuestion: {prompt}"
         
         data = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": full_prompt}
-            ]
+                {"role": "user", "content": user_content}
+            ],
+            "temperature": 0.1 # Low temperature for factual RAG
         }
         
         async with httpx.AsyncClient() as client:
-            response = await client.post(self.url, headers=headers, json=data, timeout=30.0)
-            response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"]
+            try:
+                print(f">>> LLM CLIENT: Requesting {self.model} via OpenRouter...")
+                response = await client.post(self.url, headers=headers, json=data, timeout=45.0)
+                
+                if response.status_code != 200:
+                    print(f">>> LLM CLIENT ERROR: {response.status_code} - {response.text}")
+                
+                response.raise_for_status()
+                return response.json()["choices"][0]["message"]["content"]
+            except httpx.HTTPStatusError as e:
+                print(f">>> LLM CLIENT HTTP ERROR: {e}")
+                raise
+            except Exception as e:
+                print(f">>> LLM CLIENT ERROR: {e}")
+                raise

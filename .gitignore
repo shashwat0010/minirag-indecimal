@@ -25,7 +25,5 @@ dist-ssr/
 *.swo
 
 # Project specific
-backend/data/*.md
-backend/data/*.pdf
 backend/server.log
 backend/server.err

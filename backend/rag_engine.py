@@ -49,24 +49,11 @@ class RAGEngine:
         
         context = "\n\n".join([chunk["content"] for chunk in relevant_chunks]) if relevant_chunks else "No relevant context found."
         
-        prompt = f"""
-You are an assistant that answers questions using ONLY the provided context.
-If the answer is not in the context, respond with:
-"I cannot answer this question based on the documents provided."
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-""".strip()
-
         try:
             print(">>> RAG ENGINE: Requesting answer from Cloud LLM...")
+            # Changed: Only pass the raw question and context, llm_client will handle formatting
             response = await self.llm_client.generate_response(
-                prompt=prompt,
+                prompt=question,
                 context=context,
             )
             return {
