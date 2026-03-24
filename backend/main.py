@@ -15,10 +15,15 @@ from rag_engine import RAGEngine
 
 app = FastAPI()
 
-# Add CORS middleware
+# CORS configuration
+allowed_origins = [
+    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    "https://*.vercel.app",  # Allow Vercel preview deployments
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, specify the frontend URL
+    allow_origins=allowed_origins if os.getenv("ENVIRONMENT") == "production" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

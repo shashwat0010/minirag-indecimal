@@ -200,27 +200,31 @@ Detailed evaluation:
 
 ---
 
-## 🌐 Deployment
+## 🚀 Deployment Guide
 
-### Backend (Render)
-1.  **Create a Web Service** on Render.
+### 🔹 Backend (Render)
+1.  **Create a New Web Service** on [Render](https://render.com/).
 2.  **Connect your GitHub repository**.
-3.  **Root Directory**: `backend`
-4.  **Environment Variables**:
+3.  **Configure Settings**:
+    - **Root Directory**: `backend`
+    - **Environment**: `Python 3`
+    - **Build Command**: `pip install -r requirements.txt`
+    - **Start Command**: `python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+4.  **Add Environment Variables**:
     - `OPENROUTER_API_KEY`: Your OpenRouter API key.
-    - `PYTHON_VERSION`: `3.12.0` (or your preferred version).
-5.  **Build Command**: `pip install -r requirements.txt`
-6.  **Start Command**: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT`
+    - `ENVIRONMENT`: `production`
+    - `FRONTEND_URL`: Your Vercel frontend URL (e.g., `https://your-app.vercel.app`).
+    - `DATA_DIR`: `data`
 
-### Frontend (Vercel)
-1.  **Create a New Project** on Vercel.
+### 🔹 Frontend (Vercel)
+1.  **Create a New Project** on [Vercel](https://vercel.com/).
 2.  **Connect your GitHub repository**.
-3.  **Root Directory**: `frontend`
-4.  **Framework Preset**: `Vite`
-5.  **Environment Variables**:
-    - `VITE_API_BASE_URL`: Your Render backend URL (e.g., `https://your-app.onrender.com`).
-6.  **Build Command**: `npm run build`
-7.  **Output Directory**: `dist`
+3.  **Configure Project**:
+    - **Framework Preset**: `Vite`
+    - **Root Directory**: `frontend`
+4.  **Add Environment Variables**:
+    - `VITE_API_BASE_URL`: Your Render backend URL (e.g., `https://your-backend.onrender.com`).
+5.  **Build and Deploy**.
 
 ---
 
