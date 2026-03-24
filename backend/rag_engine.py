@@ -7,7 +7,12 @@ from llm_client import LLMClient
 
 
 class RAGEngine:
-    def __init__(self, data_dir: str = "data"):
+    def __init__(self, data_dir: str = None):
+        if data_dir is None:
+            # Try to find the data directory relative to this file
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            data_dir = os.path.join(base_dir, "data")
+            
         self.doc_processor = DocumentProcessor()
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
@@ -17,7 +22,7 @@ class RAGEngine:
     def initialize(self):
         """Initializes the RAG engine by processing all PDFs in the data directory."""
         print(f">>> RAG ENGINE: Initializing from directory '{self.data_dir}'...")
-        if os.path.exists(self.data_dir):
+        if os.path.exists(self.data_dir) and os.path.isdir(self.data_dir):
             chunks = self.doc_processor.process_directory(self.data_dir)
             if chunks:
                 print(f">>> RAG ENGINE: Found {len(chunks)} chunks across documents. Adding to vector store...")
@@ -26,10 +31,18 @@ class RAGEngine:
             else:
                 print(">>> RAG ENGINE: No documents found in data directory.")
         else:
-            print(f">>> RAG ENGINE ERROR: Data directory '{self.data_dir}' does not exist.")
+            print(f">>> RAG ENGINE ERROR: Data directory '{self.data_dir}' does not exist or is not a directory.")
 
     async def answer_question(self, question: str) -> dict:
         """Retrieves context and generates an answer."""
+        # Handle simple greetings without RAG
+        greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon"]
+        if question.lower().strip() in greetings:
+            return {
+                "response": "Hello! I am your Indecimal RAG Assistant. How can I help you today?",
+                "chunks": []
+            }
+
         print(f">>> RAG ENGINE: Searching for context for question: '{question}'")
         relevant_chunks = self.vector_store.search(question)
         print(f">>> RAG ENGINE: Found {len(relevant_chunks)} relevant chunks.")
@@ -37,7 +50,7 @@ class RAGEngine:
         context = "\n\n".join([chunk["content"] for chunk in relevant_chunks]) if relevant_chunks else "No relevant context found."
         
         prompt = f"""
-You are an assistant that answers questions using only the provided context.
+You are an assistant that answers questions using ONLY the provided context.
 If the answer is not in the context, respond with:
 "I cannot answer this question based on the documents provided."
 
