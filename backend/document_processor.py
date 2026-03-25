@@ -16,17 +16,36 @@ class DocumentProcessor:
         return text
 
     def split_text(self, text: str, metadata: Dict = None) -> List[Dict]:
-        """Splits text into chunks with overlap."""
+        """Splits text into chunks more intelligently based on sections/paragraphs."""
+        # Try to split by Markdown headers first to preserve semantic sections
+        sections = text.split("\n## ")
         chunks = []
-        start = 0
-        while start < len(text):
-            end = start + self.chunk_size
-            chunk_text = text[start:end]
-            chunks.append({
-                "content": chunk_text,
-                "metadata": metadata or {}
-            })
-            start += self.chunk_size - self.chunk_overlap
+        
+        for section in sections:
+            # If section is too small, combine or handle as is
+            if len(section) < self.chunk_size:
+                chunks.append({
+                    "content": section.strip(),
+                    "metadata": metadata or {}
+                })
+            else:
+                # If section is too large, use a sliding window approach
+                start = 0
+                while start < len(section):
+                    end = start + self.chunk_size
+                    # Try to find a good breaking point (newline)
+                    if end < len(section):
+                        last_newline = section.rfind("\n", start, end)
+                        if last_newline != -1 and last_newline > start:
+                            end = last_newline
+                    
+                    chunk_text = section[start:end].strip()
+                    if chunk_text:
+                        chunks.append({
+                            "content": chunk_text,
+                            "metadata": metadata or {}
+                        })
+                    start += self.chunk_size - self.chunk_overlap
         return chunks
 
     def process_directory(self, directory_path: str) -> List[Dict]:

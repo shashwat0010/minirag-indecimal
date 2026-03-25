@@ -37,7 +37,7 @@ class VectorStore:
         self.index.add(np.array(embeddings).astype('float32'))
         self.metadata.extend(chunks)
 
-    def search(self, query: str, top_k: int = 3) -> List[Dict]:
+    def search(self, query: str, top_k: int = 5) -> List[Dict]:
         """Searches the index for relevant documents."""
         if self.index is None:
             return []
