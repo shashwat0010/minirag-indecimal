@@ -1,66 +1,70 @@
 import os
-from google import genai
-from google.genai import types
+import httpx
+import json
+from typing import List, Dict
 from config import get_config
 
 class LLMClient:
     def __init__(self, api_key: str = None, model: str = None):
-        # 1. Load config
-        self.api_key = api_key or get_config("GEMINI_API_KEY")
-        # Defaulting to gemini-2.0-flash (fast and smart)
-        self.model_id = model or get_config("MODEL_NAME", "gemini-2.0-flash")
-        
-        # 2. Initialize the official Google GenAI Client
-        # It handles the base URL and headers for you.
-        if self.api_key:
-            self.client = genai.Client(api_key=self.api_key)
-        else:
-            self.client = None
+        # Fallback chain: provided arg -> config/env -> default
+        self.api_key = api_key or get_config("OPENROUTER_API_KEY")
+        self.model = model or get_config("MODEL_NAME", "meta-llama/llama-3-8b-instruct")
+        self.url = "https://openrouter.ai/api/v1/chat/completions"
 
     async def generate_response(self, prompt: str, context: str) -> str:
-        """Generates a response using the Gemini SDK."""
+        """Generates a response using Llama-3 via OpenRouter."""
         
-        if not self.api_key or not self.client:
-            return f"No GEMINI_API_KEY found. Here's the retrieved context:\n\n{context}"
+        if not self.api_key:
+            return f"Error: OPENROUTER_API_KEY is missing. Context found: {context[:100]}..."
 
-        # 3. System Instruction (Defining the 'Persona')
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:3000", # OpenRouter requires a valid-ish referer
+            "X-Title": "Mini RAG Assistant"
+        }
+
+        # Llama 3 works best when rules are clear and bulleted
         system_prompt = (
-            "You are a strict RAG assistant. "
-            "Your task is to answer the user's question using ONLY the provided context. "
-            "Rules:\n"
-            "1. Base your answer ONLY on the context. No external knowledge.\n"
-            "2. If the answer is missing, say EXACTLY: 'Not specified in the provided documents.'\n"
-            "3. Do not mention 'the context' or 'the documents'. Just answer.\n"
-            "4. Be concise.\n"
-            "5. Brief greetings are okay, then remind them of your purpose."
+            "You are a helpful assistant that answers questions based ONLY on the provided context. "
+            "If the answer isn't in the context, say 'Not specified in the provided documents.' "
+            "Do not use outside knowledge. Do not mention the context itself."
         )
 
-        # 4. User Content
-        user_content = f"Context:\n{context}\n\nQuestion: {prompt}"
+        # Structure the user message clearly for Llama 3
+        user_content = f"CONTEXT:\n{context}\n\nUSER QUESTION: {prompt}"
 
-        # 5. Configuration (Temperature 0 for RAG accuracy)
-        config = types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=0.1,
-            top_p=1.0,
-            max_output_tokens=1000
-        )
+        data = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ],
+            "temperature": 0.1,  # Llama 3 can get 'creative' at 0.0; 0.1 is safer
+            "top_p": 0.9,
+            "max_tokens": 512
+        }
 
-        try:
-            print(f">>> GEMINI CLIENT: Requesting {self.model_id}...")
-            
-            # Using the asynchronous 'aio' property of the client
-            response = await self.client.aio.models.generate_content(
-                model=self.model_id,
-                contents=user_content,
-                config=config
-            )
-            
-            return response.text
+        async with httpx.AsyncClient() as client:
+            try:
+                # Increased timeout as OpenRouter routing to Llama providers can take time
+                response = await client.post(
+                    self.url, 
+                    headers=headers, 
+                    content=json.dumps(data), 
+                    timeout=30.0
+                )
+                
+                # Check for HTTP errors (401, 404, 429, etc)
+                if response.status_code != 200:
+                    error_data = response.json()
+                    error_msg = error_data.get('error', {}).get('message', 'Unknown Error')
+                    return f"OpenRouter Error ({response.status_code}): {error_msg}"
 
-        except Exception as e:
-            print(f">>> GEMINI CLIENT ERROR: {e}")
-            # Fallback/Safety
-            if "finish_reason" in str(e):
-                return "The model could not generate a response (safety filter or limit)."
-            raise e
+                result = response.json()
+                return result["choices"][0]["message"]["content"]
+
+            except httpx.TimeoutException:
+                return "Error: The request to OpenRouter timed out."
+            except Exception as e:
+                return f"LLM Client Error: {str(e)}"
