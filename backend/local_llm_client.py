@@ -21,8 +21,8 @@ class LocalLLMClient:
             model=self.model,
             tokenizer=self.tokenizer,
             max_new_tokens=256,
-            temperature=0.1,
-            top_p=0.9,
+            temperature=0.01, # Transformers requires > 0 for temperature
+            do_sample=False, # Disable sampling for greedy decoding (factual)
             repetition_penalty=1.2
         )
         print("Local model loaded successfully.")

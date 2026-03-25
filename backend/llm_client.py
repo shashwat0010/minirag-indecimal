@@ -24,14 +24,18 @@ class LLMClient:
         }
         
         system_prompt = (
-            "You are a helpful and precise RAG assistant. "
-            "Answer the user's question ONLY using the provided context. "
-            "If the answer is not in the context, say: 'Not specified in the provided documents.' "
-            "Structure your answer clearly with bullet points if it helps readability."
+            "You are a strict RAG assistant. "
+            "Your task is to answer the user's question using ONLY the provided context. "
+            "Rules you MUST follow:\n"
+            "1. Base your entire answer on the provided context. Do NOT use external knowledge.\n"
+            "2. If the answer is not contained within the context, respond EXACTLY with: 'Not specified in the provided documents.'\n"
+            "3. Do not mention the context or the documents in your response (e.g., don't say 'Based on the context...'). Just provide the answer.\n"
+            "4. Be concise and factual.\n"
+            "5. If the question is a general greeting like 'hi' or 'hello', you can respond briefly but then remind the user you are here to answer questions about the documents."
         )
         
         # Cleaned up: Use only the user question here, since context is in system or explicitly separated
-        user_content = f"Context: {context}\n\nQuestion: {prompt}"
+        user_content = f"Context:\n{context}\n\nQuestion: {prompt}"
         
         data = {
             "model": self.model,
@@ -39,7 +43,8 @@ class LLMClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            "temperature": 0.1 # Low temperature for factual RAG
+            "temperature": 0.0, # Zero temperature for absolute factual grounding
+            "top_p": 1.0
         }
         
         async with httpx.AsyncClient() as client:
