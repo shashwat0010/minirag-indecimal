@@ -3,6 +3,8 @@
 A full-stack **Retrieval-Augmented Generation (RAG)** system built for a construction marketplace to answer queries using internal documents (policies, FAQs, specifications) with strict grounding and zero hallucination.
 
 ---
+Demo video link: https://drive.google.com/file/d/13jQjqMyBQEbTny_lU_CpzCSK052Ih2HM/view?usp=drive_link
+Demo site: https://b7482wzajujrsjgxhhzcjo.streamlit.app/
 
 ## 🚀 Live Features
 ![alt text](image-1.png)
